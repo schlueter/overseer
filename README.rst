@@ -43,7 +43,7 @@ API
 
 - GET                returns metadata on the execution
 - POST               repeat execution
-- PUT                create an execution event. If the event is one of "stop", *"continue","terminate" or "kill" and the execution is currently executing (* or stopped), the execution process will be sent the respective signal.
+- PUT                create an execution event. If the event is one of "stop", \*"continue","terminate" or "kill" and the execution is currently executing (\* or stopped), the execution process will be sent the respective signal.
 
 `/jobs/<job name>/<execution id>/stderr`
 
