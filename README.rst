@@ -154,7 +154,7 @@ As no options are required, there are no system defaults.
 |          |                                                                       |
 +----------+-----------------------------------------------------------------------+
 
-* Both jobs defined with command and script have the overseer configuration repository's bin directory as well as the overseer `lib/execution/bin` directory on the shell path.
+\* *Both jobs defined with command and script have the overseer configuration repository's bin directory as well as the overseer `lib/execution/bin` directory on the shell path.*
 
 Execution Status
 ----------------
