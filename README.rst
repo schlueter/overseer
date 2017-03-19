@@ -154,7 +154,7 @@ As no options are required, there are no system defaults.
 |          |                                                                       |
 +----------+-----------------------------------------------------------------------+
 
-\* *Both jobs defined with command and script have the overseer configuration repository's bin directory as well as the overseer `lib/execution/bin` directory on the shell path.*
+\* *Both jobs defined with command and script have the overseer configuration repository's bin directory as well as the overseer library directories on the shell path.*
 
 Execution Status
 ----------------
@@ -179,6 +179,7 @@ Utilities provided from the library:
 | Name         | Description                                                                  |
 +==============+==============================================================================+
 | event        | Create an execution event.                                                   |
+|              |                                                                              |
 |              | +------------+------+-----------------------------------------------+        |
 |              | | argument   | type | Description                                   |        |
 |              | +============+======+===============================================+        |
@@ -186,6 +187,7 @@ Utilities provided from the library:
 |              | +------------+------+-----------------------------------------------+        |
 |              | | event name | str  | The name of event to create                   |        |
 |              | +------------+------+-----------------------------------------------+        |
+|              |                                                                              |
 +--------------+------------------------------------------------------------------------------+
 
 :Author: Brandon Schlueter <overseer@schlueter.blue>
