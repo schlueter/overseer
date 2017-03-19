@@ -191,5 +191,5 @@ Utilities provided from the library:
 +--------------+------------------------------------------------------------------------------+
 
 :Author: Brandon Schlueter <overseer@schlueter.blue>
-:Copyright: Brandon Schlueter
+:Copyright: Brandon Schlueter 2017
 :License: Affero General Public License v3 or newer
