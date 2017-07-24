@@ -1,16 +1,14 @@
 ========
 Overseer
 ========
-A job runner.
--------------
+Make sure your jobs get executed.
+---------------------------------
 
 Features
 --------
 - Git backed. All jobs are defined in a repository which Overseer is configured to read its own job-related configuration from.
 - Provides a library of common actions and behaviours with which to build jobs.
-- Jobs may be defined in JSON, or YAML and may execute any shell commands.
-- Jobs may be triggered via POSTs to the api.
-- Jobs may be triggered via configured schedules.
+- Jobs may be defined in JSON or YAML and may execute any shell commands.
 - Stderr and Stdout from each job are accessible via GETs to the api.
 - Execution status may be reported via a webhook at the conclusion of the job run, or at an point during job execution.
 
@@ -36,14 +34,14 @@ API
 
 - GET                returns job definition and metadata
 - POST               executes the job with provided parameters
-- DELETE (Maybe?)    remove job from list of active jobs
-- PUT    (Maybe?)    add job to list of active jobs
+- DELETE             remove job from list of active jobs
+- PUT                add job to list of active jobs
 
 `/jobs/<job name>/<execution id>`
 
 - GET                returns metadata on the execution
 - POST               repeat execution
-- PUT                create an execution event. If the event is one of "stop", \*"continue","terminate" or "kill" and the execution is currently executing (\* or stopped), the execution process will be sent the respective signal.
+- PUT                send a signal specified in the query string parameter to the job using `kill` (the default is whatever kill's default is on the executor, POSIX defines this as `SIGTERM`__)
 
 `/jobs/<job name>/<execution id>/stderr`
 
@@ -53,108 +51,21 @@ API
 
 - GET                returns stdout of execution
 
-`/jobs/<job name>/<execution id>/output`
-
-- GET                returns combined stdout and stderr of execution
-
-`/jobs/<job name>/<execution id>/<execution event>`
-
-- GET                returns metadata about the execution event
-
 Job Definition
 --------------
 
-Job definitions may either be in json or in yaml. The job will do nothing without a value specified in command or script, though it will "exucute" and create an execution entry if scheduled or triggered by other means. The basic structure is:
+Job definitions may either be in json or in yaml. The job will do nothing without a value specified in command or script, though it will "execute" and create an execution entry if scheduled or triggered by other means. The basic structure is:
 
 .. code-block:: yaml
 
     ---
-    - command: my_command {{ positional_var }} --some-opt {{ some_opt }}
-      vars:
-        - name: positional_var
-          type: str
-        - name: positional_var
-          type: str
-        - name: some_opt
-          type: enum
-          option: yes
-          values: [ a, b, c ]
-      schedule:
-        - time:
-          priority: '0'
-          frequency: 3600
-      ...
-
-As no options are required, there are no system defaults.
-
-+----------+-----------------------------------------------------------------------+
-| Option   |   Description                                                         |
-+==========+=======================================================================+
-| command  | A command to be executed.*                                            |
-+----------+-----------------------------------------------------------------------+
-| script   | The path to a script relative to the scripts directory of the         |
-|          | scripts directory of the configured git repository.*                  |
-+----------+-----------------------------------------------------------------------+
-| timeout  | The maximum amount of time in seconds which the job may execute for.  |
-+----------+-----------------------------------------------------------------------+
-| vars     | Variables which will be passed to the command or                      |
-|          | script. Variable definitions consist of a name                        |
-|          | and either a type or options. Valid types                             |
-|          | include any python type. The value of type and                        |
-|          | the value of any options may include values of                        |
-|          | any of the standard yaml types or enum:                               |
-|          |                                                                       |
-|          | ===========  =======================================                  |
-|          |  Type         Python Type                                             |
-|          | ===========  =======================================                  |
-|          |  null         None                                                    |
-|          |  bool         bool                                                    |
-|          |  int          int or long (int in Python 3)                           |
-|          |  float        float                                                   |
-|          |  binary       str (bytes in Python 3)                                 |
-|          |  timestamp    datetime.datetime                                       |
-|          |  pairs        list of pairs                                           |
-|          |  omap         --                                                      |
-|          |  set          set                                                     |
-|          |  str          str or unicode (str in Python 3)                        |
-|          |  seq          list                                                    |
-|          |  map          dict                                                    |
-|          |  enum         value must be one of the vars' values                   |
-|          | ===========  =======================================                  |
-|          |                                                                       |
-|          | Defined vars which are passed in as post data                         |
-|          | will be populated as Jinja2 variables or                              |
-|          | appended to the command or script upon                                |
-|          | execution.                                                            |
-|          |                                                                       |
-|          | =========  ======  ================================                   |
-|          |  option     type    Description                                       |
-|          | =========  ======  ================================                   |
-|          |  name       str     the name of the variable                          |
-|          |  type       str     type of the variable                              |
-|          |  option     bool    is the variable an option                         |
-|          |  values     list    posibble values for enum type                     |
-|          | =========  ======  ================================                   |
-|          |                                                                       |
-+----------+-----------------------------------------------------------------------+
-| schedule | Specification of a scheduled trigger to run the                       |
-|          | job.                                                                  |
-|          |                                                                       |
-|          | +-----------+------+-----------------------------------------------+  |
-|          | | option    | type | Description                                   |  |
-|          | +===========+======+===============================================+  |
-|          | | time      | str  | date and time of first run                    |  |
-|          | +-----------+------+-----------------------------------------------+  |
-|          | | frequency | str  | a crontab format frequency string or a period |  |
-|          | |           |      | of time in seconds between executions         |  |
-|          | +-----------+------+-----------------------------------------------+  |
-|          | | priority  | int  | priority order relative to mutually           |  |
-|          | |           |      | scheduled jobs                                |  |
-|          | +-----------+------+-----------------------------------------------+  |
-|          |                                                                       |
-+----------+-----------------------------------------------------------------------+
-
-\* *Both jobs defined with command and script have the overseer configuration repository's bin directory as well as the overseer library directories on the shell path.*
+    - name: A job # the job endpoint would be /job/A%20job (so maybe avoid non ascii symbols)
+      description: # an optional description
+      cmdspec: my_command positional_var --some-opt some_opt
+      env:
+        SOME_ENV_VAR: SOME_VALUE
+      user: nobody # an optional user to execute as
+      group: nogroup # an optiona group to as
 
 Execution Status
 ----------------
@@ -171,25 +82,11 @@ Execution status events will be created automatically at certain points during e
 
 Library
 -------
-The paths to the library programs will be prepended to the PATH variable available, before the configration repository's bin directory.
-
-Utilities provided from the library:
-
-+--------------+------------------------------------------------------------------------------+
-| Name         | Description                                                                  |
-+==============+==============================================================================+
-| event        | Create an execution event.                                                   |
-|              |                                                                              |
-|              | +------------+------+-----------------------------------------------+        |
-|              | | argument   | type | Description                                   |        |
-|              | +============+======+===============================================+        |
-|              | | event name | str  | The name of event to create                   |        |
-|              | +------------+------+-----------------------------------------------+        |
-|              | | cause      | str  | The cause of the event                        |        |
-|              | +------------+------+-----------------------------------------------+        |
-|              |                                                                              |
-+--------------+------------------------------------------------------------------------------+
+The paths to the library programs will be prepended to the PATH variable available, behind only the configuration repository's bin directory.
 
 :Author: Brandon Schlueter <overseer@schlueter.blue>
 :Copyright: Brandon Schlueter 2017
 :License: Affero General Public License v3 or newer
+
+.. _POSIX_Kill: http://pubs.opengroup.org/onlinepubs/9699919799/utilities/kill.html
+__ _POSIX_Kill
